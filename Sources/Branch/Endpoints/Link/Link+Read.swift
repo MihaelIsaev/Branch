@@ -8,7 +8,7 @@ extension Link {
         let data: T
     }
     
-    public func read<T: Codable>(on container: Container, link: String) throws -> Future<ReadLink<T>> {
+    public func read<T: Codable>(on container: Container, link: String, to: T.Type) throws -> Future<ReadLink<T>> {
         guard let link = link.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else {
             throw Abort(.notAcceptable, reason: "Unable to escape link")
         }
