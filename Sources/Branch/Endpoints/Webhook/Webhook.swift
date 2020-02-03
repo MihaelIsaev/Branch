@@ -1,4 +1,4 @@
-public class Webhook {
+public struct Webhook {
     let branch: Branch
     
     init (_ branch: Branch) {

@@ -8,16 +8,16 @@ extension Referral {
         let campaign = "referral-campaign"
     }
     
-    public func link(on container: Container, payload: ReferrafLinkPayload) throws -> Future<String> {
+    public func link(on eventLoop: EventLoop, payload: ReferrafLinkPayload) -> EventLoopFuture<String> {
         var payload = payload
-        payload.branch_key = branch.key
+        payload.branch_key = branch.configuration.key
         struct Response: Content {
             let url: String
         }
-        return try branch.request(on: container, to: .url, method: .POST) { req in
+        return branch.request(on: eventLoop, to: .url, method: .POST) { req in
             try req.content.encode(payload)
-        }.flatMap { response in
-            return try response.content.decode(Response.self).map { $0.url }
-        }
+        }.flatMapThrowing { response in
+            try response.content.decode(Response.self)
+        }.map { $0.url }
     }
 }

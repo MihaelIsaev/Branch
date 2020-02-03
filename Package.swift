@@ -1,26 +1,50 @@
-// swift-tools-version:4.2
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
+// swift-tools-version:5.1
 import PackageDescription
+import Foundation
+
+// MARK: - Conveniences
+
+let localDev = ProcessInfo.processInfo.environment["LIBS_DEVELOPMENT"] == "1"
+let devDir = "../"
+
+struct Dep {
+    let package: PackageDescription.Package.Dependency
+    let targets: [Target.Dependency]
+}
+
+extension Array where Element == Dep {
+    mutating func appendLocal(_ path: String, targets: Target.Dependency...) {
+        append(.init(package: .package(path: "\(devDir)\(path)"), targets: targets))
+    }
+
+    mutating func append(_ url: String, from: Version, targets: Target.Dependency...) {
+        append(.init(package: .package(url: url, from: from), targets: targets))
+    }
+
+    mutating func append(_ url: String, _ requirement: PackageDescription.Package.Dependency.Requirement, targets: Target.Dependency...) {
+        append(.init(package: .package(url: url, requirement), targets: targets))
+    }
+}
+
+// MARK: - Dependencies
+
+var deps: [Dep] = []
+
+deps.append("https://github.com/vapor/vapor.git", from: "4.0.0-beta", targets: "Vapor")
+
+// MARK: - Package
 
 let package = Package(
     name: "Branch",
+    platforms: [
+       .macOS(.v10_14)
+    ],
     products: [
-        .library(
-            name: "Branch",
-            targets: ["Branch"]),
+        .library(name: "Branch", targets: ["Branch"]),
     ],
-    dependencies: [
-        .package(url: "https://github.com/vapor/vapor.git", from: "3.0.0"),
-    ],
+    dependencies: deps.map { $0.package },
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages which this package depends on.
-        .target(
-            name: "Branch",
-            dependencies: ["Vapor"]),
-        .testTarget(
-            name: "BranchTests",
-            dependencies: ["Branch"]),
+        .target(name: "Branch", dependencies: deps.flatMap { $0.targets }),
+        .testTarget(name: "BranchTests", dependencies: ["Branch"]),
     ]
 )

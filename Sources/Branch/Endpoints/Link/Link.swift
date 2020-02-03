@@ -1,4 +1,4 @@
-public class Link {
+public struct Link {
     let branch: Branch
     
     init (_ branch: Branch) {

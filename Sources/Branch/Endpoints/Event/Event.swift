@@ -1,4 +1,4 @@
-public class Event {
+public struct Event {
     let branch: Branch
     
     init (_ branch: Branch) {

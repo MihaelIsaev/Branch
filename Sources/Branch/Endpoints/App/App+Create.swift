@@ -81,11 +81,11 @@ extension App {
         }
     }
     
-    public func create(on container: Container, payload: CreatePayload) throws -> Future<AppReadModel> {
-        return try branch.request(on: container, to: .app, method: .POST) { req in
+    public func create(on eventLoop: EventLoop, payload: CreatePayload) -> EventLoopFuture<AppReadModel> {
+        branch.request(on: eventLoop, to: .app, method: .POST) { req in
             try req.content.encode(payload)
-        }.flatMap { response in
-            return try response.content.decode(AppReadModel.self)
+        }.flatMapThrowing { response in
+            try response.content.decode(AppReadModel.self)
         }
     }
 }

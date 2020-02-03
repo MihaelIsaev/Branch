@@ -26,13 +26,15 @@ extension Link {
         let url: String
     }
     
-    public func create<T: Codable>(on container: Container, payload: LinkCreatePayload<T>) throws -> Future<String> {
+    public func create<T: Codable>(on eventLoop: EventLoop, payload: LinkCreatePayload<T>) -> EventLoopFuture<String> {
         var payload = payload
-        payload.branch_key = branch.key
-        return try branch.request(on: container, to: .url, method: .POST) { req in
+        payload.branch_key = branch.configuration.key
+        return branch.request(on: eventLoop, to: .url, method: .POST) { req in
             try req.content.encode(payload)
-        }.flatMap { response in
-            return try response.content.decode(LinkCreateResponse.self).map { $0.url }
+        }.flatMapThrowing { response in
+            try response.content.decode(LinkCreateResponse.self)
+        }.map {
+            $0.url
         }
     }
 }

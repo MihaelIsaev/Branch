@@ -8,12 +8,12 @@ extension Link {
         let data: T
     }
     
-    public func read<T: Codable>(on container: Container, link: String, to: T.Type) throws -> Future<ReadLink<T>> {
+    public func read<T: Codable>(on eventLoop: EventLoop, link: String, to: T.Type) -> EventLoopFuture<ReadLink<T>> {
         guard let link = link.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else {
-            throw Abort(.notAcceptable, reason: "Unable to escape link")
+            return eventLoop.makeFailedFuture(Abort(.notAcceptable, reason: "Unable to escape link"))
         }
-        return try branch.request(on: container, to: .url, query: ["url": link, "branch_key": branch.key], method: .GET).flatMap { response in
-            return try response.content.decode(ReadLink<T>.self)
+        return branch.request(on: eventLoop, to: .url, query: ["url": link, "branch_key": branch.configuration.key], method: .GET).flatMapThrowing { response in
+            try response.content.decode(ReadLink<T>.self)
         }
     }
 }

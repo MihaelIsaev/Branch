@@ -141,9 +141,9 @@ extension App {
         }
     }
     
-    public func read(on container: Container) throws -> Future<AppReadModel> {
-        return try branch.request(on: container, to: .app, parameters: branch.key, query: ["branch_secret": branch.secret], method: .GET).flatMap { response in
-            return try response.content.decode(AppReadModel.self)
+    public func read(on eventLoop: EventLoop) -> EventLoopFuture<AppReadModel> {
+        branch.request(on: eventLoop, to: .app, parameters: branch.configuration.key, query: ["branch_secret": branch.configuration.secret], method: .GET).flatMapThrowing { response in
+            try response.content.decode(AppReadModel.self)
         }
     }
 }

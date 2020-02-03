@@ -1,4 +1,4 @@
-public class User {
+public struct User {
     let branch: Branch
     
     init (_ branch: Branch) {

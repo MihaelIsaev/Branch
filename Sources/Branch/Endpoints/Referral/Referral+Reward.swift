@@ -11,17 +11,17 @@ extension Referral {
             }
         }
     
-        public func reward(on container: Container, payload: ReferralRewardPayload) throws -> Future<Bool> {
+        public func reward(on eventLoop: EventLoop, payload: ReferralRewardPayload) -> EventLoopFuture<Bool> {
             var payload = payload
-            payload.branch_key = branch.key
-            payload.branch_secret = branch.secret
+            payload.branch_key = branch.configuration.key
+            payload.branch_secret = branch.configuration.secret
             struct Response: Content {
                 let success: Bool
             }
-            return try branch.request(on: container, to: .credits, method: .POST) { req in
+            return branch.request(on: eventLoop, to: .credits, method: .POST) { req in
                 try req.content.encode(payload)
-            }.flatMap { response in
-                return try response.content.decode(Response.self).map { $0.success }
-            }
+            }.flatMapThrowing { response in
+                try response.content.decode(Response.self)
+            }.map { $0.success }
         }
 }

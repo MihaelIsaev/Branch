@@ -1,19 +1,43 @@
 import Vapor
 import Foundation
 
-public class Branch: Service {
+extension Application {
+    public var branch: Branch { .init(self, client: client) }
+}
+
+extension Request {
+    public var branch: Branch { .init(application, client: client) }
+}
+
+public enum BranchMode {
+    case auto
+    case manual(key: String, secret: String)
+}
+
+public struct Branch {
     let baseURL = "https://api2.branch.io/v1/"
+    let application: Application
+    let client: Client
+    let mode: BranchMode
     
-    let key, secret: String
-    
-    // MARK: Initialization
-    
-    public init(key: String, secret: String) {
-        self.key = key
-        self.secret = secret
+    public init (_ application: Application, client: Client, mode: BranchMode = .auto) {
+        self.application = application
+        self.client = client
+        self.mode = mode
     }
     
-    typealias BeforeSend = (Request) throws -> Void
+    public var app: App { .init(self) }
+    public var link: Link { .init(self) }
+    public var event: Event { .init(self) }
+    public var user: User { .init(self) }
+    public var referral: Referral { .init(self) }
+    public var webhook: Webhook { .init(self) }
+}
+
+// MARK: -
+    
+extension Branch {
+    typealias BeforeSend = (inout ClientRequest) throws -> Void
     
     enum Endpoint: String {
         case url
@@ -27,41 +51,46 @@ public class Branch: Service {
         case eventresponse
     }
     
-    func request(on container: Container,
+    func request(on eventLoop: EventLoop,
                        to endpoint: Endpoint,
                        parameters: String...,
                        query: [String: String] = [:],
                        method: HTTPMethod = .GET,
-                       beforeSend: @escaping BeforeSend = { _ in }) throws -> Future<Response> {
+                       beforeSend: @escaping BeforeSend = { _ in }) -> EventLoopFuture<ClientResponse> {
         let parameters = parameters.joined(separator: "/")
-        let query: [String: String] = ["branch_key": key].merging(query) { $1 }
+        let query: [String: String] = ["branch_key": configuration.key].merging(query) { $1 }
         let queryString: String = query.map { $0.key + "=" + $0.value }.joined(separator: "&")
         let url = baseURL + endpoint.rawValue + parameters + "?" + queryString
-        let client = try container.make(Client.self)
         switch method {
-        case .GET: return client.get(url, headers: [:], beforeSend: beforeSend)
-        case .POST: return client.post(url, headers: [:], beforeSend: beforeSend)
-        case .PUT: return client.put(url, headers: [:], beforeSend: beforeSend)
-        case .PATCH: return client.patch(url, headers: [:], beforeSend: beforeSend)
-        case .DELETE: return client.delete(url, headers: [:], beforeSend: beforeSend)
-        default: throw Abort(.internalServerError, reason: "Unsupportable HTTP method")
+        case .GET: return client.get(URI(string: url), headers: HTTPHeaders(), beforeSend: beforeSend)
+        case .POST: return client.post(URI(string: url), headers: HTTPHeaders(), beforeSend: beforeSend)
+        case .PUT: return client.put(URI(string: url), headers: HTTPHeaders(), beforeSend: beforeSend)
+        case .PATCH: return client.patch(URI(string: url), headers: HTTPHeaders(), beforeSend: beforeSend)
+        case .DELETE: return client.delete(URI(string: url), headers: HTTPHeaders(), beforeSend: beforeSend)
+        default: return eventLoop.makeFailedFuture(Abort(.internalServerError, reason: "Unsupportable HTTP method"))
         }
     }
-    
-    public lazy var app = App(self)
-    public lazy var link = Link(self)
-    public lazy var event = Event(self)
-    public lazy var user = User(self)
-    public lazy var referral = Referral(self)
-    public lazy var webhook = Webhook(self)
 }
 
+// MARK: - Configuration
+
 extension Branch {
-    public convenience init() {
-        if let key = Environment.get("BRANCH_KEY"), let secret = Environment.get("BRANCH_SECRET") {
-            self.init(key: key, secret: secret)
-        } else {
-            fatalError("Branch ENV variables not set")
+    struct ConfigurationKey: StorageKey {
+        typealias Value = BranchConfiguration
+    }
+
+    public var configuration: BranchConfiguration {
+        get {
+            switch mode {
+            case .auto:
+                guard let config = application.storage[ConfigurationKey.self] else { fatalError("Branch not configured") }
+                return config
+            case .manual(let key, let secret):
+                return BranchConfiguration(key: key, secret: secret)
+            }
+        }
+        nonmutating set {
+            application.storage[ConfigurationKey.self] = newValue
         }
     }
 }

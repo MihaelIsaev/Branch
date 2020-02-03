@@ -82,13 +82,13 @@ extension App {
         }
     }
     
-    public func update(on container: Container, payload: UpdatePayload) throws -> Future<AppReadModel> {
-        return try branch.request(on: container, to: .app, parameters: branch.key, method: .PUT) { req in
+    public func update(on eventLoop: EventLoop, payload: UpdatePayload) -> EventLoopFuture<AppReadModel> {
+        branch.request(on: eventLoop, to: .app, parameters: branch.configuration.key, method: .PUT) { req in
             var payload = payload
-            payload.branch_secret = self.branch.secret
+            payload.branch_secret = self.branch.configuration.secret
             try req.content.encode(payload)
-        }.flatMap { response in
-            return try response.content.decode(AppReadModel.self)
+        }.flatMapThrowing { response in
+            try response.content.decode(AppReadModel.self)
         }
     }
 }

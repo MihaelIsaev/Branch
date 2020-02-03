@@ -1,4 +1,4 @@
-public class Referral {
+public struct Referral {
     let branch: Branch
     
     init (_ branch: Branch) {

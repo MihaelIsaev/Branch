@@ -7,14 +7,14 @@ extension User {
         let link: String
     }
     
-    public func read(on container: Container, identity: String) throws -> Future<UserReadModel> {
-        return try branch.request(on: container, to: .profile, query: ["identity": identity, "branch_key": branch.key], method: .GET).flatMap { response in
-            return try response.content.decode(UserReadModel.self)
+    public func read(on eventLoop: EventLoop, identity: String) -> EventLoopFuture<UserReadModel> {
+        branch.request(on: eventLoop, to: .profile, query: ["identity": identity, "branch_key": branch.configuration.key], method: .GET).flatMapThrowing { response in
+            try response.content.decode(UserReadModel.self)
         }
     }
-    public func read(on container: Container, identity_id: Int) throws -> Future<UserReadModel> {
-        return try branch.request(on: container, to: .profile, query: ["identity_id": String(describing: identity_id), "branch_key": branch.key], method: .GET).flatMap { response in
-            return try response.content.decode(UserReadModel.self)
+    public func read(on eventLoop: EventLoop, identity_id: Int) -> EventLoopFuture<UserReadModel> {
+        branch.request(on: eventLoop, to: .profile, query: ["identity_id": String(describing: identity_id), "branch_key": branch.configuration.key], method: .GET).flatMapThrowing { response in
+            try response.content.decode(UserReadModel.self)
         }
     }
 }
