@@ -30,14 +30,14 @@ extension Array where Element == Dep {
 
 var deps: [Dep] = []
 
-deps.append("https://github.com/vapor/vapor.git", from: "4.0.0-beta", targets: "Vapor")
+deps.append("https://github.com/vapor/vapor.git", from: "4.0.0-rc", targets: "Vapor")
 
 // MARK: - Package
 
 let package = Package(
     name: "Branch",
     platforms: [
-       .macOS(.v10_14)
+       .macOS(.v10_15)
     ],
     products: [
         .library(name: "Branch", targets: ["Branch"]),
