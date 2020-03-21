@@ -1,3 +1,5 @@
+<p align="center"><a href="https://discord.gg/q5wCPYv">SWIFT.STREAM COMMUNITY IN DISCORD</a></p>
+
 # Branch
 
-A description of this package.
+Branch.io API wrapper for Vapor4
