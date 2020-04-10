@@ -30,7 +30,7 @@ extension Array where Element == Dep {
 
 var deps: [Dep] = []
 
-deps.append("https://github.com/vapor/vapor.git", from: "4.0.0-rc", targets: .product(name: "Vapor", package: "vapor"))
+deps.append("https://github.com/vapor/vapor.git", from: "4.0.0", targets: .product(name: "Vapor", package: "vapor"))
 
 // MARK: - Package
 
